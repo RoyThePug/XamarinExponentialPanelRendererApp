@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModel="clr-namespace:ExpPanelRenderer.ViewModel;assembly=ExpPanelRenderer"
+             xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer"
+             x:Class="ExpPanelRenderer.MainPage">
+    <ContentPage.BindingContext>
+        <viewModel:MainViewModel />
+    </ContentPage.BindingContext>
+
+    <Grid RowDefinitions="0.6*,0.4*" RowSpacing="0">
+        <Grid RowDefinitions="0.1*,*,0.1*" BackgroundColor="SlateGray" ColumnDefinitions="0.1*,*,0.1*" VerticalOptions="FillAndExpand">
+            <visualItemsPanel:VisualItemsPanelControl BindingContext="{Binding}" AutomationId="wordItemsControl" Grid.Row="1" Grid.Column="1"
+                                                      ItemsSource="{Binding Items}" VerticalOptions="FillAndExpand" />
+        </Grid>
+        <Grid Grid.Row="1" RowDefinitions="*,auto" BackgroundColor="DarkGray">
+            <StackLayout Orientation="Vertical">
+                <Button WidthRequest="100" HeightRequest="50" AutomationId="btnAddFigure"
+                        Text="Add Item" Command="{Binding AddVisualItemCommand}">
+                </Button>
+                <Button WidthRequest="100" HeightRequest="50"
+                        Text="Remove All Items" Command="{Binding ClearItemsCommand}">
+                </Button>
+            </StackLayout>
+        </Grid>
+    </Grid>
+
+</ContentPage>
