@@ -15,6 +15,7 @@ public partial class MainViewModel : ObservableObject
 {
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddVisualItemCommand))]
     private bool isBusy;
+
     [ObservableProperty] ObservableCollection<TestModel> items;
 
     private Dictionary<int, string> _colors;
@@ -33,16 +34,14 @@ public partial class MainViewModel : ObservableObject
         };
 
         var index = new Random().Next(1, 6);
-        var index2 = new Random().Next(1, 6);
-        var index3 = new Random().Next(1, 6);
-
-        Items.Add(new TestModel(_colors[index], ColorConverters.FromHex(_colors[index])));
+        Items.Add(new TestModel(Items.Count(), _colors[index], ColorConverters.FromHex(_colors[index])));
     }
 
- 
-   private bool CanAddVisualItem => !IsBusy;
+    private bool CanAddVisualItem => !IsBusy;
 
-   [RelayCommand(CanExecute = nameof(CanAddVisualItem))]
+    #region Command
+
+    [RelayCommand(CanExecute = nameof(CanAddVisualItem))]
     Task AddVisualItemAsync()
     {
         try
@@ -62,7 +61,7 @@ public partial class MainViewModel : ObservableObject
                 color = ColorConverters.FromHex(_colors[index]);
             }
 
-            Items.Add(new TestModel(color.Name, color));
+            Items.Add(new TestModel(Items.Count(), color.Name, color));
         }
         catch (Exception e)
         {
@@ -71,7 +70,7 @@ public partial class MainViewModel : ObservableObject
 
         finally
         {
-         //   IsBusy = false;
+            //   IsBusy = false;
         }
 
         return Task.CompletedTask;
@@ -84,6 +83,16 @@ public partial class MainViewModel : ObservableObject
 
         return Task.CompletedTask;
     }
+
+    [RelayCommand]
+    Task DownAsync()
+    {
+        return Task.CompletedTask;
+    }
+
+    #endregion
+
+    #region Method
 
     private Color GenerateColor(Color comparedColor)
     {
@@ -99,4 +108,6 @@ public partial class MainViewModel : ObservableObject
             return Color.Aqua;
         }
     }
+
+    #endregion
 }

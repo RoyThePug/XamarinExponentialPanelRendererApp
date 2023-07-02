@@ -11,8 +11,10 @@
 
     <Grid RowDefinitions="0.6*,0.4*" RowSpacing="0">
         <Grid RowDefinitions="0.1*,*,0.1*" BackgroundColor="SlateGray" ColumnDefinitions="0.1*,*,0.1*" VerticalOptions="FillAndExpand">
-            <visualItemsPanel:VisualItemsPanelControl BindingContext="{Binding}" AutomationId="wordItemsControl" Grid.Row="1" Grid.Column="1"
-                                                      ItemsSource="{Binding Items}" VerticalOptions="FillAndExpand" />
+            <visualItemsPanel:VisualItemsPanelControl AutomationId="wordItemsControl" Grid.Row="1" Grid.Column="1"
+                                                      ItemsSource="{Binding Items}" VerticalOptions="FillAndExpand"
+                                                      AnimationTime="1"
+                                                      DownCommand="{Binding DownCommand}"/>
         </Grid>
         <Grid Grid.Row="1" RowDefinitions="*,auto" BackgroundColor="DarkGray">
             <StackLayout Orientation="Vertical">
@@ -22,6 +24,14 @@
                 <Button WidthRequest="100" HeightRequest="50"
                         Text="Remove All Items" Command="{Binding ClearItemsCommand}">
                 </Button>
+                <StackLayout>
+                    <Button Text="Test" WidthRequest="100" HeightRequest="40">
+                        
+                    </Button>
+                    <StackLayout.GestureRecognizers>
+                        <DragGestureRecognizer  CanDrag="True"></DragGestureRecognizer>
+                    </StackLayout.GestureRecognizers>
+                </StackLayout>
             </StackLayout>
         </Grid>
     </Grid>

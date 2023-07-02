@@ -4,9 +4,11 @@
              xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer"
              x:Class="ExpPanelRenderer.CustomControl.VisualItemsPanel.VisualItemsPanelControl">
   <ContentView.Content>
-      <Grid x:Name="PART_Root_Grid" RowDefinitions="*,auto">
-          <AbsoluteLayout x:Name="PART_Root_Stack"  BackgroundColor="LightBlue" />
-          <Label Grid.Row="1" Text="{Binding ItemsCount,Source={RelativeSource AncestorType={x:Type visualItemsPanel:VisualItemsPanelControl}}}"></Label>
+      <Grid x:Name="PartRootGrid" RowDefinitions="*,auto,40" >
+          <AbsoluteLayout x:Name="PartRootStack" BackgroundColor="LightBlue"
+                          IsClippedToBounds="True"/>
+          <Label Grid.Row="1" Text="{Binding ItemsCount, Source={RelativeSource AncestorType={x:Type visualItemsPanel:VisualItemsPanelControl}}}"></Label>
+          <Button Grid.Row="2" HeightRequest="40" WidthRequest="20" Text="Down" Clicked="ButtonDownClicked"></Button>
       </Grid>
   </ContentView.Content>
 </ContentView>

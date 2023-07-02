@@ -6,9 +6,9 @@ using Xamarin.Forms;
 
 namespace ExpPanelRenderer.CustomControl.VisualItem
 {
-    public class VisualItemControl : TemplatedView
+    public class VisualItemControl : ContentView 
     {
-        #region BindableProperty
+        #region Bindable Property
 
         public static readonly BindableProperty TextProperty = BindableProperty.Create(
             propertyName: nameof(Text),
@@ -19,24 +19,25 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
 
         public string Text
         {
-            get => (string) base.GetValue(TextProperty);
+            get => (string) GetValue(TextProperty);
             set
             {
-                if (this.Text != value)
-                    base.SetValue(TextProperty, value);
+                if (Text != value)
+                {
+                    SetValue(TextProperty, value);
+                }
             }
         }
-        
+
         public static readonly BindableProperty AnimationTimeProperty = BindableProperty.Create(
             propertyName: nameof(Animation),
             returnType: typeof(double),
             declaringType: typeof(VisualItemControl),
-            defaultValue:1.0,
-            propertyChanged:PropertyChanged);
+            defaultValue: 1.0,
+            propertyChanged: PropertyChanged);
 
         private static void PropertyChanged(BindableObject bindable, object oldvalue, object newvalue)
         {
-            
         }
 
         public double AnimationTime
@@ -50,26 +51,25 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
                 }
             }
         }
-        
-        
-        
+
+
         public static readonly BindableProperty IsActiveProperty = BindableProperty.Create(
             propertyName: nameof(IsActive),
             returnType: typeof(bool),
             declaringType: typeof(VisualItemControl),
             defaultValue: false,
             defaultBindingMode: BindingMode.OneWay,
-            propertyChanged:IsActivePropertyChanged);
+            propertyChanged: IsActivePropertyChanged);
 
         private static void IsActivePropertyChanged(BindableObject bindable, object oldvalue, object newvalue)
         {
             if (!(bool) newvalue)
             {
-             //   VisualStateManager.GoToState((VisualElement)bindable, "DeActive");
+                //   VisualStateManager.GoToState((VisualElement)bindable, "DeActive");
             }
             else
             {
-               // VisualStateManager.GoToState((VisualElement)bindable, "Focused");
+                // VisualStateManager.GoToState((VisualElement)bindable, "Focused");
             }
         }
 
@@ -90,10 +90,9 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
         public VisualItemControl()
         {
         }
-        
+
         protected override void OnApplyTemplate()
         {
-
         }
     }
 }

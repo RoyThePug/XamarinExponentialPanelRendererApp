@@ -1,8 +1,9 @@
 ﻿<ResourceDictionary xmlns="http://xamarin.com/schemas/2014/forms"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                     xmlns:visualItem="clr-namespace:ExpPanelRenderer.CustomControl.VisualItem;assembly=ExpPanelRenderer"
-                    xmlns:triggerAction="clr-namespace:ExpPanelRenderer.CustomControl.VisualItem.TriggerAction;assembly=ExpPanelRenderer"
-                    xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer">
+                    xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer"
+                    xmlns:behavior="clr-namespace:ExpPanelRenderer.CustomControl.InteractionLogic.Behavior;assembly=ExpPanelRenderer"
+                    xmlns:triggerAction="clr-namespace:ExpPanelRenderer.CustomControl.InteractionLogic.TriggerAction;assembly=ExpPanelRenderer">
 
     <ControlTemplate x:Key="Template">
         <StackLayout x:Name="StackLayout"
@@ -13,7 +14,7 @@
             <Grid>
                 <BoxView Opacity="0.4" HeightRequest="200"
                          BackgroundColor="Black"
-                         triggerAction:MyBehavior.AnimationTime="{Binding Path=AnimationTime, Source={RelativeSource AncestorType={x:Type visualItemsPanel:VisualItemsPanelControl}}}">
+                         behavior:CustomBehavior.AnimationTime="{Binding Path=AnimationTime, Source={RelativeSource AncestorType={x:Type visualItemsPanel:VisualItemsPanelControl}}}">
                     <BoxView.Triggers>
                         <DataTrigger TargetType="BoxView"
                                      Binding="{Binding Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}, Path=IsActive}"
@@ -25,33 +26,61 @@
                         <DataTrigger TargetType="BoxView"
                                      Binding="{Binding Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}, Path=IsActive}"
                                      Value="False">
-                            <Setter Property="BoxView.Opacity" Value="0.4"></Setter>
+                            <DataTrigger.EnterActions>
+                                <triggerAction:FadeToTriggerAction Opacity="0.4" />
+                            </DataTrigger.EnterActions>
+                            <!-- <Setter Property="BoxView.Opacity" Value="0.3"></Setter> -->
                         </DataTrigger>
                     </BoxView.Triggers>
                 </BoxView>
-                <Label x:Name="label" Text="{Binding Text}" Opacity="1" VerticalTextAlignment="Start" />
+                <Label x:Name="label" Text="{Binding Title}" Opacity="1" VerticalTextAlignment="Start" />
             </Grid>
         </StackLayout>
     </ControlTemplate>
 
     <Style TargetType="visualItem:VisualItemControl">
-        <Setter Property="ControlTemplate" Value="{StaticResource Template}" />
-        <Setter Property="Text" Value="{Binding Text}"></Setter>
+        <!-- <Setter Property="ControlTemplate" Value="{StaticResource Template}" /> -->
+        <Setter Property="Text" Value="{Binding Title}"></Setter>
         <Setter Property="BackgroundColor" Value="{Binding Color}"></Setter>
         <Setter Property="Opacity" Value="1.0"></Setter>
-        <!-- <Setter Property="ControlTemplate"> -->
-        <!--     <Setter.Value> -->
-        <!--         <ControlTemplate> -->
-        <!--             <StackLayout x:Name="StackLayout" -->
-        <!--                          BackgroundColor="{ Binding BackgroundColor,Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}}" -->
-        <!--                          HeightRequest="200" -->
-        <!--                          BindingContext="{Binding Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}}" -->
-        <!--                          Opacity="{Binding Opacity, Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}}"> -->
-        <!--                 <Label Text="{Binding Text}" /> -->
-        <!--             </StackLayout> -->
-        <!--         </ControlTemplate> -->
-        <!--     </Setter.Value> -->
-        <!-- </Setter> -->
+        <Setter Property="ControlTemplate">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Frame x:Name="StackLayout" Padding="0"
+                           HeightRequest="200"
+                           BackgroundColor="{ Binding BackgroundColor,Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}}"
+                           BindingContext="{Binding Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}}"
+                           Opacity="{Binding Opacity, Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}}">
+                        <Grid>
+                            <BoxView Opacity="0.4" HeightRequest="200"
+                                     BackgroundColor="Black"
+                                     behavior:CustomBehavior.AnimationTime="{Binding Path=AnimationTime, Source={RelativeSource AncestorType={x:Type visualItemsPanel:VisualItemsPanelControl}}}">
+                                <BoxView.Triggers>
+                                    <DataTrigger TargetType="BoxView"
+                                                 Binding="{Binding Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}, Path=IsActive}"
+                                                 Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <triggerAction:FadeToTriggerAction Opacity="0" />
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="BoxView"
+                                                 Binding="{Binding Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}, Path=IsActive}"
+                                                 Value="False">
+                                        <DataTrigger.EnterActions>
+                                            <triggerAction:FadeToTriggerAction Opacity="0.4" />
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                </BoxView.Triggers>
+                            </BoxView>
+                            <Label x:Name="label" Text="{Binding Text}" Opacity="1" VerticalTextAlignment="Start" />
+                        </Grid>
+                        <Frame.GestureRecognizers>
+                            <DragGestureRecognizer CanDrag="True"></DragGestureRecognizer>
+                        </Frame.GestureRecognizers>
+                    </Frame>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <!-- <Setter Property="VisualStateManager.VisualStateGroups"> -->
         <!--     <VisualStateGroupList> -->
         <!--         <VisualStateGroup> -->
