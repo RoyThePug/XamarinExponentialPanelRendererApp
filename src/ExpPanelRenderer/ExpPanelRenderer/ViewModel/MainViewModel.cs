@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ExpPanelRenderer.Domain.Service.TextStorage;
 using ExpPanelRenderer.Model;
 using Xamarin.Essentials;
 
@@ -13,15 +14,31 @@ namespace ExpPanelRenderer.ViewModel;
 
 public partial class MainViewModel : ObservableObject
 {
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddVisualItemCommand))]
-    private bool isBusy;
+    #region Field
+
+    private readonly ITextStorageService _textStorage;
+
+    #endregion
+
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddVisualItemAsyncCommand))]
+    private bool _isBusy;
+
+    [ObservableProperty] private string _currentSearchText;
 
     [ObservableProperty] ObservableCollection<TestModel> items;
 
     private Dictionary<int, string> _colors;
 
-    public MainViewModel()
+    #region Property
+
+    public IEnumerable<string> TextItems { get; private set; }
+
+    #endregion
+
+    public MainViewModel(ITextStorageService textStorage)
     {
+        _textStorage = textStorage ?? throw new ArgumentNullException(nameof(textStorage));
+
         items = new ObservableCollection<TestModel>();
 
         _colors = new Dictionary<int, string>
@@ -37,12 +54,46 @@ public partial class MainViewModel : ObservableObject
         Items.Add(new TestModel(Items.Count(), _colors[index], ColorConverters.FromHex(_colors[index])));
     }
 
+    #region Can Execute
+
     private bool CanAddVisualItem => !IsBusy;
+    private bool CanGetItems => !IsBusy;
+
+    #endregion
+
 
     #region Command
 
+    [RelayCommand]
+    async Task GetAllTextAsync()
+    {
+        try
+        {
+            TextItems = await _textStorage.GetAllText();
+        }
+        catch (Exception e)
+        {
+        }
+        finally
+        {
+        }
+    }
+
+    [RelayCommand]
+    async Task SearchTextCommand(object parameter)
+    {
+        try
+        {
+            CurrentSearchText = await _textStorage.SearchText(parameter.ToString(),CurrentSearchText);
+        }
+        catch (Exception e)
+        {
+         
+        }
+    }
+
     [RelayCommand(CanExecute = nameof(CanAddVisualItem))]
-    Task AddVisualItemAsync()
+    void AddVisualItemAsync()
     {
         try
         {
@@ -72,16 +123,12 @@ public partial class MainViewModel : ObservableObject
         {
             //   IsBusy = false;
         }
-
-        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    Task ClearItemsAsync()
+    void ClearItemsAsync()
     {
         Items.Clear();
-
-        return Task.CompletedTask;
     }
 
     [RelayCommand]

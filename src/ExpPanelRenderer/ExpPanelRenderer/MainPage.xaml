@@ -5,9 +5,6 @@
              xmlns:viewModel="clr-namespace:ExpPanelRenderer.ViewModel;assembly=ExpPanelRenderer"
              xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer"
              x:Class="ExpPanelRenderer.MainPage">
-    <ContentPage.BindingContext>
-        <viewModel:MainViewModel />
-    </ContentPage.BindingContext>
 
     <Grid RowDefinitions="0.6*,0.4*" RowSpacing="0">
         <Grid RowDefinitions="0.1*,*,0.1*" BackgroundColor="SlateGray" ColumnDefinitions="0.1*,*,0.1*" VerticalOptions="FillAndExpand">
@@ -21,7 +18,7 @@
                 <Button WidthRequest="100" HeightRequest="50" AutomationId="btnAddFigure"
                         Text="Add Item" Command="{Binding AddVisualItemCommand}">
                 </Button>
-                <Button WidthRequest="100" HeightRequest="50"
+                <Button AutomationId="RemoveBtn" WidthRequest="100" HeightRequest="50"
                         Text="Remove All Items" Command="{Binding ClearItemsCommand}">
                 </Button>
                 <StackLayout>

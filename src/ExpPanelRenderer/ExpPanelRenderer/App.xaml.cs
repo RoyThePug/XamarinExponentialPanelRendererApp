@@ -10,7 +10,9 @@ namespace ExpPanelRenderer
         {
             InitializeComponent();
 
-            MainPage = new MainPage();
+            MainPage = new AppShell();
+
+            Startup.Init();
         }
 
         protected override void OnStart()

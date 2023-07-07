@@ -223,6 +223,8 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
         private async void ButtonDownClicked(object sender, EventArgs e)
         {
+            //Add Is Busy Flag
+                
             var tasks = new List<Task>();
 
             var item = Items.Last();
