@@ -14,6 +14,8 @@ namespace ExpPanelRenderer.UITest
                                    .EnableLocalScreenshots()
                                    .ApkFile("D:/Workspace/Xamarin/XamarinExponentialPanelRendererApp/src/ExpPanelRenderer/ExpPanelRenderer.Android/bin/Debug/com.companyname.exppanelrenderer.apk")
                                    .StartApp();
+
+               // return ConfigureApp.Android.InstalledApp("ExpPanelRenderer.Android").StartApp();
             }
 
             return ConfigureApp.iOS.StartApp();

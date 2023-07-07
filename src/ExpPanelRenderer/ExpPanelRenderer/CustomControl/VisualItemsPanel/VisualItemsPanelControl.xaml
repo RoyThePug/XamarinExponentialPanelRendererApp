@@ -2,7 +2,7 @@
 <ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer"
-             x:Class="ExpPanelRenderer.CustomControl.VisualItemsPanel.VisualItemsPanelControl">
+             x:Class="ExpPanelRenderer.CustomControl.VisualItemsPanel.VisualItemsPanelControl" >
   <ContentView.Content>
       <Grid x:Name="PartRootGrid" RowDefinitions="*,auto,40" >
           <AbsoluteLayout x:Name="PartRootStack" BackgroundColor="LightBlue"

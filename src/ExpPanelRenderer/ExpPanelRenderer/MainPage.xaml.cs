@@ -1,5 +1,7 @@
 ﻿
+using ExpPanelRenderer.ViewModel;
 using Xamarin.Forms;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ExpPanelRenderer
 {
@@ -8,6 +10,8 @@ namespace ExpPanelRenderer
         public MainPage()
         {
             InitializeComponent();
+            
+            BindingContext = Startup.ServiceProvider.GetService<MainViewModel>();
         }
     }
 }

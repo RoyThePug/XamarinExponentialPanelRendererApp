@@ -13,11 +13,11 @@ namespace ExpPanelRenderer.Model
 
         [ObservableProperty] private Color _color;
 
-        public TestModel(int index, string name, Color color)
+        public TestModel(int index, string text, Color color)
         {
             Id = Guid.NewGuid();
-            Title = index.ToString();
-            Text = name;
+            Title = text;
+            Text = text;
             Color = color;
         }
 

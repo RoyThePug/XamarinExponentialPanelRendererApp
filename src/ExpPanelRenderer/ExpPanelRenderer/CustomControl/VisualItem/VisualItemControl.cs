@@ -6,7 +6,7 @@ using Xamarin.Forms;
 
 namespace ExpPanelRenderer.CustomControl.VisualItem
 {
-    public class VisualItemControl : ContentView 
+    public class VisualItemControl : ContentView
     {
         #region Bindable Property
 
@@ -29,6 +29,26 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
             }
         }
 
+        public static readonly BindableProperty TextColorProperty = BindableProperty.Create(
+            propertyName: nameof(TextColor),
+            returnType: typeof(Color),
+            declaringType: typeof(VisualItemControl),
+            defaultValue: Color.Blue,
+            defaultBindingMode: BindingMode.OneWay);
+
+        public Color TextColor
+        {
+            get => (Color) GetValue(TextColorProperty);
+            set
+            {
+                if (TextColor != value)
+                {
+                    SetValue(TextColorProperty, value);
+                }
+            }
+        }
+
+
         public static readonly BindableProperty AnimationTimeProperty = BindableProperty.Create(
             propertyName: nameof(Animation),
             returnType: typeof(double),
@@ -42,16 +62,49 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
 
         public double AnimationTime
         {
-            get => (double) base.GetValue(AnimationTimeProperty);
+            get => (double) GetValue(AnimationTimeProperty);
             set
             {
-                if (this.AnimationTime != value)
+                if (AnimationTime != value)
                 {
-                    base.SetValue(AnimationTimeProperty, value);
+                    SetValue(AnimationTimeProperty, value);
                 }
             }
         }
 
+        public static readonly BindableProperty IsSelectedProperty = BindableProperty.Create(
+            propertyName: nameof(IsSelected),
+            returnType: typeof(bool),
+            declaringType: typeof(VisualItemControl),
+            defaultValue: false,
+            propertyChanged: IsSelectedChanged);
+
+        public bool IsSelected
+        {
+            get => (bool) GetValue(IsSelectedProperty);
+            set
+            {
+                if (IsSelected != value)
+                {
+                    SetValue(IsSelectedProperty, value);
+                }
+            }
+        }
+
+        private static void IsSelectedChanged(BindableObject bindable, object oldvalue, object newvalue)
+        {
+            if (bindable is VisualItemControl control)
+            {
+                if ((bool) newvalue)
+                {
+                    VisualStateManager.GoToState(control, "Test");
+                }
+                else
+                {
+                    VisualStateManager.GoToState(control, "Normal");
+                }
+            }
+        }
 
         public static readonly BindableProperty IsActiveProperty = BindableProperty.Create(
             propertyName: nameof(IsActive),
@@ -63,14 +116,14 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
 
         private static void IsActivePropertyChanged(BindableObject bindable, object oldvalue, object newvalue)
         {
-            if (!(bool) newvalue)
-            {
-                //   VisualStateManager.GoToState((VisualElement)bindable, "DeActive");
-            }
-            else
-            {
-                // VisualStateManager.GoToState((VisualElement)bindable, "Focused");
-            }
+            // if (!(bool) newvalue)
+            // {
+            //      VisualStateManager.GoToState((VisualElement)bindable, "Normal");
+            // }
+            // else
+            // {
+            //     VisualStateManager.GoToState((VisualElement)bindable, "Test");
+            // }
         }
 
         public bool IsActive

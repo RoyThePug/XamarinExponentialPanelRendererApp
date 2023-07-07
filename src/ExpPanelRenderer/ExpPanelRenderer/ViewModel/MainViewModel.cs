@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ExpPanelRenderer.Common;
+using ExpPanelRenderer.Domain.Service.TextStorage;
 using ExpPanelRenderer.Model;
 using Xamarin.Essentials;
 
@@ -13,15 +15,39 @@ namespace ExpPanelRenderer.ViewModel;
 
 public partial class MainViewModel : ObservableObject
 {
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddVisualItemCommand))]
-    private bool isBusy;
+    #region Field
 
-    [ObservableProperty] ObservableCollection<TestModel> items;
+    private readonly ITextStorageService _textStorage;
 
     private Dictionary<int, string> _colors;
 
-    public MainViewModel()
+    #endregion
+
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddVisualItemCommand))]
+    private bool _isBusy;
+
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SearchTextCommand))]
+    private string _currentSearchText;
+
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddVisualItemCommand))]
+    private string _currentEnterText;
+
+    [ObservableProperty] ObservableCollection<TestModel> items;
+
+    [ObservableProperty] private object _selectedItem;
+
+    #region Property
+
+    public IEnumerable<string> TextItems { get; private set; }
+
+    public string CurrentResultText { get; private set; }
+
+    #endregion
+
+    public MainViewModel(ITextStorageService textStorage)
     {
+        _textStorage = textStorage ?? throw new ArgumentNullException(nameof(textStorage));
+
         items = new ObservableCollection<TestModel>();
 
         _colors = new Dictionary<int, string>
@@ -32,23 +58,99 @@ public partial class MainViewModel : ObservableObject
             {4, "FFA500"},
             {5, "eaeaea"}
         };
-
-        var index = new Random().Next(1, 6);
-        Items.Add(new TestModel(Items.Count(), _colors[index], ColorConverters.FromHex(_colors[index])));
     }
 
+    #region Can Execute
+
     private bool CanAddVisualItem => !IsBusy;
+    private bool CanGetItems => !IsBusy;
+
+    private bool CanSearch => !string.IsNullOrEmpty(CurrentSearchText) && !IsBusy;
+
+    #endregion
 
     #region Command
 
+    [RelayCommand]
+    async Task GetAllTextAsync()
+    {
+        try
+        {
+            IsBusy = true;
+
+            TextItems = await _textStorage.GetAllText();
+
+            var index = new Random().Next(1, 3);
+
+            Items.Add(new TestModel(Items.Count, TextItems.ToList()[0], ColorConverters.FromHex(_colors[index])));
+        }
+        catch (Exception e)
+        {
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSearch))]
+    async Task SearchTextAsync(object parameter)
+    {
+        try
+        {
+            IsBusy = true;
+
+            var substring = parameter.ToString();
+
+            // if (!string.IsNullOrEmpty(CurrentResultText))
+            // {
+            //     if (!CurrentResultText.Equals(substring))
+            //     {
+            //         CurrentResultText = string.Empty;
+            //     }
+            // }
+
+            var res = CurrentResultText;
+            
+            CurrentResultText = await _textStorage.SearchText(substring, res);
+
+            var equalItem = Items.FirstOrDefault(i => i.Text.Equals(CurrentResultText));
+
+            if (equalItem != null)
+            {
+                if (SelectedItem == null)
+                {
+                    SelectedItem = equalItem;
+                }
+                else
+                {
+                    if (!new TestEqComparer().Equals((TestModel) SelectedItem, equalItem))
+                    {
+                        SelectedItem = equalItem;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+    
     [RelayCommand(CanExecute = nameof(CanAddVisualItem))]
-    Task AddVisualItemAsync()
+    async Task AddVisualItemAsync()
     {
         try
         {
             IsBusy = true;
 
             Color color;
+
+            var textItems = TextItems.ToList();
+            var index = new Random().Next(1, textItems.Count);
 
             if (items.Any())
             {
@@ -57,30 +159,27 @@ public partial class MainViewModel : ObservableObject
             }
             else
             {
-                var index = new Random().Next(1, 5);
                 color = ColorConverters.FromHex(_colors[index]);
             }
 
-            Items.Add(new TestModel(Items.Count(), color.Name, color));
+            Items.Add(new TestModel(Items.Count(), CurrentEnterText, color));
+
+            _textStorage.AddText(CurrentEnterText);
         }
         catch (Exception e)
         {
             // ignored
         }
-
         finally
         {
-            //   IsBusy = false;
+            CurrentEnterText = string.Empty;
         }
-
-        return Task.CompletedTask;
     }
 
     [RelayCommand]
     Task ClearItemsAsync()
     {
         Items.Clear();
-
         return Task.CompletedTask;
     }
 
@@ -98,12 +197,12 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            var hex = _colors[new Random().Next(1, 6)];
+            var hex = _colors[new Random().Next(1, _colors.Count)];
             var generateColor = ColorConverters.FromHex(hex);
 
             return !generateColor.Equals(comparedColor) ? generateColor : GenerateColor(comparedColor);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return Color.Aqua;
         }

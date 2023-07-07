@@ -5,10 +5,8 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using ExpPanelRenderer.Common;
 using ExpPanelRenderer.CustomControl.VisualItem;
 using ExpPanelRenderer.Model;
 using ExpPanelRenderer.ViewModel;
@@ -56,6 +54,43 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
         {
             get => (ICommand) GetValue(DownCommandProperty);
             set => SetValue(DownCommandProperty, value);
+        }
+
+        public static readonly BindableProperty SelectedItemProperty = BindableProperty.Create(
+            propertyName: nameof(SelectedItem),
+            typeof(object),
+            typeof(VisualItemsPanelControl),
+            defaultValue: null,
+            propertyChanged: SelectedItemChanged
+        );
+
+        public object SelectedItem
+        {
+            get => GetValue(SelectedItemProperty);
+            set => SetValue(SelectedItemProperty, value);
+        }
+
+        private static void SelectedItemChanged(BindableObject bindable, object oldvalue, object newvalue)
+        {
+            if (bindable is VisualItemsPanelControl control)
+            {
+                var currentItem = control.Items.FirstOrDefault(i => i.BindingContext.Equals(newvalue));
+
+                if (currentItem != null)
+                {
+                    foreach (var item in control.Items)
+                    {
+                        if (!item.BindingContext.Equals(currentItem.BindingContext))
+                        {
+                            item.IsSelected = false;
+                        }
+                    }
+
+                    currentItem.IsSelected = true;
+
+                    control.Test();
+                }
+            }
         }
 
         public static readonly BindableProperty AnimationTimeProperty = BindableProperty.Create(
@@ -177,7 +212,7 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
                     {
                         item.IsActive = false;
                     }
-                    
+
                     CalculateItemsYTranslate();
                 }
 
@@ -223,47 +258,16 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
         private async void ButtonDownClicked(object sender, EventArgs e)
         {
-            var tasks = new List<Task>();
+            //Add Is Busy Flag
 
-            var item = Items.Last();
-
-            if (item != null)
+            if (Items.Any())
             {
-                var yEnd = item.TranslationY + item.Height;
+                var item = Items.Last();
 
-                tasks.Add(item.TranslateTo(0, yEnd, (uint) TimeSpan.FromSeconds(AnimationTime).TotalMilliseconds));
-
-                var copyData = ((TestModel) item.BindingContext).DeepCopy();
-
-                var newItem = CreateVisualItem(copyData);
-
-                _isLoaded = true;
-                
-                newItem.TranslationY = -newItem.Height;
-
-                var yTranslateSource = _hiddenItems.OrderBy(x => x.Value).Select(x => x.Value);
-
-                Items.Insert(0, newItem);
-
-                _hiddenItems = Items.Where(x => !x.Equals(item)).Zip(yTranslateSource, (visual, yTranslate) => new {visual, yTranslate})
-                                    .ToDictionary(x => x.visual, x => x.yTranslate);
-                Items.Clear();
-
-                foreach (var visual in _hiddenItems.Keys)
+                if (item != null)
                 {
-                    Items.Add(visual);
-                    tasks.Add(visual.TranslateTo(0, _hiddenItems[visual], (uint) TimeSpan.FromSeconds(AnimationTime).TotalMilliseconds));
+                    await TestAnimate(item);
                 }
-
-                item.IsActive = false;
-                
-                Items.Add(item);
-
-                _hiddenItems.Keys.Last().IsActive = true;
-
-                await Task.WhenAll(tasks);
-
-                Items.Remove(item);
             }
         }
 
@@ -271,26 +275,6 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
         #region Method
 
-        private VisualItemControl CreateVisualItem(object dataContext)
-        {
-            var animationTimeBinding = new Binding()
-            {
-                Path = nameof(AnimationTime),
-                Source = this
-            };
-
-            var item = new VisualItemControl()
-            {
-                IsActive = false,
-                BindingContext = dataContext,
-                WidthRequest = _currentWidth
-            };
-
-            item.SetBinding(VisualItemControl.AnimationTimeProperty, animationTimeBinding);
-
-            return item;
-        }
-        
         private Task Animate()
         {
             var data = _hiddenItems.OrderBy(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
@@ -301,7 +285,7 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             {
                 item.Key.TranslationY = 0;
                 item.Key.WidthRequest = _currentWidth;
-                
+
                 // might use Child Animation
                 //var animation = new Animation(v => item.Key.TranslateTo(0, item.Value, 3000));
 
@@ -309,7 +293,7 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             }
 
             data.Keys.Last().IsActive = true;
-            
+
             return Task.WhenAll(tasks);
         }
 
@@ -341,6 +325,91 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
                 // item.WidthRequest = currentWidth;
                 _hiddenItems[item] = powValue;
             }
+        }
+
+        private async void Test()
+        {
+            if (!Items.Any() || SelectedItem is null)
+            {
+                return;
+            }
+
+            var currentItem = Items.FirstOrDefault(i => i.BindingContext.Equals(SelectedItem));
+
+            var itemsToRender = Items.Where(i => Items.IndexOf(i) > Items.IndexOf(currentItem));
+
+            if (itemsToRender.Any())
+            {
+                var queueToRender = new Stack<VisualItemControl>(itemsToRender);
+
+                do
+                {
+                    var itemToRender = queueToRender.Pop();
+                    await TestAnimate(itemToRender);
+                } while (queueToRender.Count > 0);
+            }
+        }
+
+        private async Task TestAnimate(VisualItemControl visualItemControl)
+        {
+            var tasks = new List<Task>();
+
+            var yEnd = visualItemControl.TranslationY + visualItemControl.Height;
+
+            tasks.Add(visualItemControl.TranslateTo(0, yEnd, (uint) TimeSpan.FromSeconds(AnimationTime).TotalMilliseconds));
+
+            var copyData = ((TestModel) visualItemControl.BindingContext).DeepCopy();
+
+            var newItem = CreateVisualItem(visualItemControl.BindingContext);
+            newItem.IsSelected = visualItemControl.IsSelected;
+
+            _isLoaded = true;
+
+            newItem.TranslationY = -newItem.Height;
+
+            var yTranslateSource = _hiddenItems.OrderBy(x => x.Value).Select(x => x.Value);
+
+            Items.Insert(0, newItem);
+
+            _hiddenItems = Items.Where(x => !x.Equals(visualItemControl)).Zip(yTranslateSource, (visual, yTranslate) => new {visual, yTranslate})
+                                .ToDictionary(x => x.visual, x => x.yTranslate);
+            Items.Clear();
+
+            foreach (var visual in _hiddenItems.Keys)
+            {
+                Items.Add(visual);
+                tasks.Add(visual.TranslateTo(0, _hiddenItems[visual], (uint) TimeSpan.FromSeconds(AnimationTime).TotalMilliseconds));
+            }
+
+            visualItemControl.IsActive = false;
+
+            Items.Add(visualItemControl);
+
+            _hiddenItems.Keys.Last().IsActive = true;
+
+            await Task.WhenAll(tasks);
+
+            Items.Remove(visualItemControl);
+        }
+
+        private VisualItemControl CreateVisualItem(object dataContext)
+        {
+            var animationTimeBinding = new Binding()
+            {
+                Path = nameof(AnimationTime),
+                Source = this
+            };
+
+            var item = new VisualItemControl()
+            {
+                IsActive = false,
+                BindingContext = dataContext,
+                WidthRequest = _currentWidth
+            };
+
+            item.SetBinding(VisualItemControl.AnimationTimeProperty, animationTimeBinding);
+
+            return item;
         }
 
         #endregion
