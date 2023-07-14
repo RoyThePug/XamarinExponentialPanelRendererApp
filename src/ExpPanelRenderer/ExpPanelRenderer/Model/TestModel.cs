@@ -8,7 +8,7 @@ namespace ExpPanelRenderer.Model
     {
         public Guid Id { get; }
         [ObservableProperty] private string _title;
-        
+
         [ObservableProperty] private string _text;
 
         [ObservableProperty] private Color _color;
@@ -23,8 +23,13 @@ namespace ExpPanelRenderer.Model
 
         public TestModel DeepCopy()
         {
-            var copy = (TestModel)MemberwiseClone();
-            copy.Text = string.Copy(Text);
+            var copy = (TestModel) MemberwiseClone();
+            
+            if (!string.IsNullOrEmpty(Text))
+            {
+                copy.Text = string.Copy(Text);
+            }
+
             return copy;
         }
     }

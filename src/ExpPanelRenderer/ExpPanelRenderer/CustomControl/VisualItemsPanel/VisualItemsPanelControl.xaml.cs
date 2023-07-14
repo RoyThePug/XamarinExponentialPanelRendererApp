@@ -31,6 +31,23 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
         #endregion
 
+        #region Readonly Bindable Property
+
+        public static readonly BindablePropertyKey CanScrollKey = BindableProperty.CreateReadOnly(
+            nameof(CanScroll),
+            typeof(bool),
+            typeof(VisualItemsPanelControl), false);
+
+        public static readonly BindableProperty CanScrollProperty = CanScrollKey.BindableProperty;
+
+        public bool CanScroll
+        {
+            get => (bool) GetValue(CanScrollProperty);
+            private set => SetValue(CanScrollKey, value);
+        }
+
+        #endregion
+
         #region Bindable Property
 
         public static readonly BindableProperty UpCommandProperty = BindableProperty.Create(
@@ -99,6 +116,7 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             typeof(VisualItemsPanelControl),
             defaultValue: 3.0);
 
+        
         public double AnimationTime
         {
             get => (double) GetValue(AnimationTimeProperty);
@@ -136,14 +154,15 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             {
                 if (bindable is VisualItemsPanelControl control)
                 {
-                    if (e.NewItems != null)
+                    if (e.Action == NotifyCollectionChangedAction.Add)
                     {
                         var visualItem = control.CreateVisualItem(e.NewItems[0]);
                         control.Items.Add(visualItem);
                     }
-                    else
+                    else if (e.Action == NotifyCollectionChangedAction.Reset)
                     {
                         control.Items.Clear();
+                        control.CanScroll = false;
                     }
 
                     control.ItemsCount = control.Items.Count;
@@ -202,6 +221,8 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
                     return;
                 }
 
+                CanScroll = false;
+
                 var count = Items.Count;
 
                 if (count > 0)
@@ -220,12 +241,20 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
                 await Animate();
             }
-            catch (Exception exception)
+            catch (Exception)
             {
             }
             finally
             {
-                ((MainViewModel) BindingContext).IsBusy = false;
+                if (!_isLoaded)
+                {
+                    ((MainViewModel) BindingContext).IsBusy = false;
+
+                    if (_hiddenItems.Count > 1)
+                    {
+                        CanScroll = true;
+                    }
+                }
             }
         }
 
@@ -258,15 +287,25 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
         private async void ButtonDownClicked(object sender, EventArgs e)
         {
-            //Add Is Busy Flag
-
-            if (Items.Any())
+            if (Items.Count > 1)
             {
-                var item = Items.Last();
-
-                if (item != null)
+                try
                 {
-                    await TestAnimate(item);
+                    CanScroll = false;
+
+                    var item = Items.Last();
+
+                    if (item != null)
+                    {
+                        await TestAnimate(item);
+                    }
+                }
+                catch (Exception eq)
+                {
+                }
+                finally
+                {
+                    CanScroll = true;
                 }
             }
         }
@@ -342,11 +381,23 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             {
                 var queueToRender = new Stack<VisualItemControl>(itemsToRender);
 
-                do
+                try
                 {
-                    var itemToRender = queueToRender.Pop();
-                    await TestAnimate(itemToRender);
-                } while (queueToRender.Count > 0);
+                    CanScroll = false;
+
+                    do
+                    {
+                        var itemToRender = queueToRender.Pop();
+                        await TestAnimate(itemToRender);
+                    } while (queueToRender.Count > 0);
+                }
+                catch (Exception e)
+                {
+                }
+                finally
+                {
+                    CanScroll = true;
+                }
             }
         }
 

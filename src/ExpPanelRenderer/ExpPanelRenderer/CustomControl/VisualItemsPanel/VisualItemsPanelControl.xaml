@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
+<Grid xmlns="http://xamarin.com/schemas/2014/forms" 
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer"
              x:Class="ExpPanelRenderer.CustomControl.VisualItemsPanel.VisualItemsPanelControl" >
-  <ContentView.Content>
+
       <Grid x:Name="PartRootGrid" RowDefinitions="*,auto,40" >
           <AbsoluteLayout x:Name="PartRootStack" BackgroundColor="LightBlue"
                           IsClippedToBounds="True"/>
           <Label Grid.Row="1" Text="{Binding ItemsCount, Source={RelativeSource AncestorType={x:Type visualItemsPanel:VisualItemsPanelControl}}}"></Label>
-          <Button Grid.Row="2" HeightRequest="40" WidthRequest="20" Text="Down" Clicked="ButtonDownClicked"></Button>
+          <Button Grid.Row="2" HeightRequest="40" WidthRequest="20" Text="Down" Clicked="ButtonDownClicked"
+                  IsEnabled="{Binding CanScroll, Source={RelativeSource AncestorType={x:Type visualItemsPanel:VisualItemsPanelControl}}}"/>
       </Grid>
-  </ContentView.Content>
-</ContentView>
+</Grid>
