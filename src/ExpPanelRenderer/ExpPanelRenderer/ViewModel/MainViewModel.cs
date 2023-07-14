@@ -32,6 +32,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(AddVisualItemCommand))]
     private string _currentEnterText;
 
+    [ObservableProperty] private double _animationTime;
+
     [ObservableProperty] ObservableCollection<TestModel> items;
 
     [ObservableProperty] private object _selectedItem;
