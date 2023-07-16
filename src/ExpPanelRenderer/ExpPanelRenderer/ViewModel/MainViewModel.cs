@@ -52,6 +52,8 @@ public partial class MainViewModel : ObservableObject
 
         items = new ObservableCollection<TestModel>();
 
+        AnimationTime = 0.5;
+
         _colors = new Dictionary<int, string>
         {
             {1, "00FF00"},

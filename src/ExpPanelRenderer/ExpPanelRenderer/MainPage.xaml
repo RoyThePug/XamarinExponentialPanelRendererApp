@@ -17,7 +17,7 @@
                                                       ItemsSource="{Binding Items}"
                                                       SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                                                       VerticalOptions="FillAndExpand"
-                                                      AnimationTime="1"
+                                                      AnimationTime="{Binding AnimationTime}"
                                                       DownCommand="{Binding DownCommand}" />
         </Grid>
         <Grid Grid.Row="1" RowDefinitions="*,auto" BackgroundColor="DarkGray">
@@ -39,6 +39,10 @@
                     <Grid.GestureRecognizers>
                         <DragGestureRecognizer CanDrag="True"></DragGestureRecognizer>
                     </Grid.GestureRecognizers>
+                </Grid>
+                <Grid ColumnDefinitions="auto,auto">
+                    <Entry WidthRequest="50" HeightRequest="50" Text="{Binding AnimationTime}"/>
+                    <Label Grid.Column="1" Text="Animation Time" FontSize="16" VerticalOptions="Center"></Label>
                 </Grid>
             </StackLayout>
         </Grid>
