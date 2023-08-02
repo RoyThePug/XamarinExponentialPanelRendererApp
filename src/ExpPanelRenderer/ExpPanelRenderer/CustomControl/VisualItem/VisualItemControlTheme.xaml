@@ -3,8 +3,12 @@
                     xmlns:visualItem="clr-namespace:ExpPanelRenderer.CustomControl.VisualItem;assembly=ExpPanelRenderer"
                     xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer"
                     xmlns:behavior="clr-namespace:ExpPanelRenderer.CustomControl.InteractionLogic.Behavior;assembly=ExpPanelRenderer"
-                    xmlns:triggerAction="clr-namespace:ExpPanelRenderer.CustomControl.InteractionLogic.TriggerAction;assembly=ExpPanelRenderer">
+                    xmlns:triggerAction="clr-namespace:ExpPanelRenderer.CustomControl.InteractionLogic.TriggerAction;assembly=ExpPanelRenderer"
+                    xmlns:removeItem="clr-namespace:ExpPanelRenderer.CustomControl.RemoveItem;assembly=ExpPanelRenderer"
+                    xmlns:converters="http://xamarin.com/schemas/2020/toolkit">
 
+    <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    
     <ControlTemplate x:Key="Template">
         <StackLayout x:Name="StackLayout"
                      HeightRequest="200"
@@ -38,6 +42,11 @@
         </StackLayout>
     </ControlTemplate>
 
+
+    <Style TargetType="RadioButton">
+        <Setter Property="ControlTemplate"></Setter>
+    </Style>
+
     <Style TargetType="visualItem:VisualItemControl">
         <!-- <Setter Property="ControlTemplate" Value="{StaticResource Template}" /> -->
         <Setter Property="Text" Value="{Binding Title}"></Setter>
@@ -47,7 +56,7 @@
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
-                    <VisualState x:Name="Normal"/>
+                    <VisualState x:Name="Normal" />
                     <VisualState x:Name="Test">
                         <VisualState.Setters>
                             <Setter Property="TextColor" Value="Red" />
@@ -90,6 +99,13 @@
                                    FontSize="12" FontAttributes="Bold"
                                    TextColor="{Binding TextColor, Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}}"
                                    Opacity="1" VerticalTextAlignment="Start" />
+                            <!-- Remove Item -->
+                            <removeItem:RemoveVisualControl x:Name="PartRemove" Margin="5"
+                                                            WidthRequest="25" HeightRequest="25"
+                                                            IsEnabled="{Binding IsEditable, Source={RelativeSource AncestorType={x:Type visualItem:VisualItemControl}}}"
+                                                            VerticalOptions="Start"
+                                                            HorizontalOptions="End">
+                            </removeItem:RemoveVisualControl>
                         </Grid>
                         <Frame.GestureRecognizers>
                             <DragGestureRecognizer CanDrag="True"></DragGestureRecognizer>

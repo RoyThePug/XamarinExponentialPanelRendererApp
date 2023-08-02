@@ -5,9 +5,13 @@
              xmlns:viewModel="clr-namespace:ExpPanelRenderer.ViewModel;assembly=ExpPanelRenderer"
              xmlns:visualItemsPanel="clr-namespace:ExpPanelRenderer.CustomControl.VisualItemsPanel;assembly=ExpPanelRenderer"
              xmlns:behaviors="http://xamarin.com/schemas/2020/toolkit"
+             xmlns:converter="clr-namespace:ExpPanelRenderer.CustomControl.Converter;assembly=ExpPanelRenderer"
              x:DataType="viewModel:MainViewModel"
              x:Class="ExpPanelRenderer.MainPage"
              Title="MainPage">
+    <ContentPage.Resources>
+        <converter:RoutedPropertyChangedEventArgsToDataContextConverter x:Key="PassEventArgsToDataContextConv" />
+    </ContentPage.Resources>
     <ContentPage.Behaviors>
         <behaviors:EventToCommandBehavior EventName="Appearing" Command="{Binding GetAllTextCommand}" />
     </ContentPage.Behaviors>
@@ -19,13 +23,18 @@
                                                       SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                                                       VerticalOptions="FillAndExpand"
                                                       AnimationTime="{Binding AnimationTime}"
-                                                      DownCommand="{Binding DownCommand}" />
+                                                      DownCommand="{Binding DownCommand}">
+                <visualItemsPanel:VisualItemsPanelControl.Behaviors>
+                    <behaviors:EventToCommandBehavior EventName="RemoveItem" EventArgsConverter="{StaticResource PassEventArgsToDataContextConv}"
+                                                      Command="{Binding RemoveCommand}" />
+                </visualItemsPanel:VisualItemsPanelControl.Behaviors>
+            </visualItemsPanel:VisualItemsPanelControl>
         </Grid>
         <Grid Grid.Row="1" RowDefinitions="*,auto" BackgroundColor="DarkGray">
             <StackLayout Orientation="Vertical">
                 <Grid ColumnDefinitions="*,auto">
                     <Entry x:Name="entryText" HeightRequest="50" Text="{Binding CurrentEnterText, Mode=TwoWay}" />
-                    <Button AutomationId="btnAddFigure" Grid.Column="1" WidthRequest="100" HeightRequest="50" 
+                    <Button AutomationId="btnAddFigure" Grid.Column="1" WidthRequest="100" HeightRequest="50"
                             Text="Add Item" Command="{Binding AddVisualItemCommand}">
                     </Button>
                 </Grid>
@@ -42,7 +51,7 @@
                     </Grid.GestureRecognizers>
                 </Grid>
                 <Grid ColumnDefinitions="auto,auto">
-                    <Entry WidthRequest="50" HeightRequest="50" Text="{Binding AnimationTime}"/>
+                    <Entry WidthRequest="50" HeightRequest="50" Text="{Binding AnimationTime}" />
                     <Label Grid.Column="1" Text="Animation Time" FontSize="16" VerticalOptions="Center"></Label>
                 </Grid>
             </StackLayout>

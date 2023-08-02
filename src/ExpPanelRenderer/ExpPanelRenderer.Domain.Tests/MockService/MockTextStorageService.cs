@@ -58,6 +58,11 @@ public class MockTextStorageService : ITextStorageService
         throw new NotImplementedException();
     }
 
+    public void RemoveText(string text)
+    {
+        throw new NotImplementedException();
+    }
+
     #region Mock
 
     private IEnumerable<string> GetMockText()

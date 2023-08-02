@@ -1,0 +1,39 @@
+﻿<ResourceDictionary xmlns="http://xamarin.com/schemas/2014/forms"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                    xmlns:removeItem="clr-namespace:ExpPanelRenderer.CustomControl.RemoveItem;assembly=ExpPanelRenderer">
+
+    <Style TargetType="removeItem:RemoveVisualControl">
+        <Setter Property="ControlTemplate">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Grid x:Name="PART_Root">
+                        <Path x:Name="PART_Image" 
+                              Aspect="Fill"
+                              IsEnabled="{TemplateBinding IsEnabled}"
+                              Data="M 8,0C 3.59867,0 0,3.59867 0,8C 0,12.4013 3.59867,16 8,16C 12.4013,16 16,12.4013 16,8C 16,3.59867 12.4013,0 8,0 Z M 12,5L 9,8L 12,11L 12,12L 11,12L 8,9L 5,12L 4,12L 4,11L 7,8L 4,5L 4,4L 5,4L 8,7L 11,4L 12,4" >
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal">
+                                        <VisualState.Setters>
+                                            <Setter Property="Fill" Value="Black" />
+                                        </VisualState.Setters>
+                                    </VisualState> 
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Property="Fill" Value="Gray"/>
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Property="Fill" Value="Pink" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                        </Path>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

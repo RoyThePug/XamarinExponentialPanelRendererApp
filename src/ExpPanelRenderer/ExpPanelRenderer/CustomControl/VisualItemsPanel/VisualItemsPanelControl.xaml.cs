@@ -7,6 +7,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using ExpPanelRenderer.Common;
+using ExpPanelRenderer.CustomControl.Common;
+using ExpPanelRenderer.CustomControl.Service;
 using ExpPanelRenderer.CustomControl.VisualItem;
 using ExpPanelRenderer.Model;
 using ExpPanelRenderer.ViewModel;
@@ -21,13 +24,19 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
     {
         #region Field
 
-        public ObservableCollection<VisualItemControl> Items { get; }
+        private readonly IRenderService _renderService;
 
-        private Dictionary<VisualItemControl, double> _hiddenItems;
+        private RenderMode _renderMode;
+
+        public ObservableCollection<VisualItemControl> Items { get; private set; }
+
+        public Dictionary<VisualItemControl, double> _hiddenItems;
 
         private bool _isLoaded;
 
-        private double _currentWidth;
+        public double _currentWidth;
+
+        private bool _scrollMode = false;
 
         #endregion
 
@@ -87,36 +96,13 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             set => SetValue(SelectedItemProperty, value);
         }
 
-        private static void SelectedItemChanged(BindableObject bindable, object oldvalue, object newvalue)
-        {
-            if (bindable is VisualItemsPanelControl control)
-            {
-                var currentItem = control.Items.FirstOrDefault(i => i.BindingContext.Equals(newvalue));
-
-                if (currentItem != null)
-                {
-                    foreach (var item in control.Items)
-                    {
-                        if (!item.BindingContext.Equals(currentItem.BindingContext))
-                        {
-                            item.IsSelected = false;
-                        }
-                    }
-
-                    currentItem.IsSelected = true;
-
-                    control.Test();
-                }
-            }
-        }
-
         public static readonly BindableProperty AnimationTimeProperty = BindableProperty.Create(
             propertyName: nameof(AnimationTime),
             typeof(double),
             typeof(VisualItemsPanelControl),
             defaultValue: 3.0);
 
-        
+
         public double AnimationTime
         {
             get => (double) GetValue(AnimationTimeProperty);
@@ -159,6 +145,16 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
                         var visualItem = control.CreateVisualItem(e.NewItems[0]);
                         control.Items.Add(visualItem);
                     }
+
+                    if (e.Action == NotifyCollectionChangedAction.Remove)
+                    {
+                        var visualItem = control.Items.FirstOrDefault(x => x.BindingContext.Equals(e.OldItems[0]));
+
+                        if (visualItem != null)
+                        {
+                            control.Items.Remove(visualItem);
+                        }
+                    }
                     else if (e.Action == NotifyCollectionChangedAction.Reset)
                     {
                         control.Items.Clear();
@@ -191,6 +187,35 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             }
         }
 
+        private static void SelectedItemChanged(BindableObject bindable, object oldvalue, object newvalue)
+        {
+            if (bindable is VisualItemsPanelControl control)
+            {
+                var currentItem = control.Items.FirstOrDefault(i => i.BindingContext.Equals(newvalue));
+
+                if (currentItem != null)
+                {
+                    foreach (var item in control.Items)
+                    {
+                        if (!item.BindingContext.Equals(currentItem.BindingContext))
+                        {
+                            item.IsSelected = false;
+                        }
+                    }
+
+                    currentItem.IsSelected = true;
+
+                    control.Test();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Event
+
+        public event EventHandler RemoveItem;
+
         #endregion
 
         #region Constructor
@@ -198,6 +223,8 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
         public VisualItemsPanelControl()
         {
             InitializeComponent();
+
+            _renderService = new RenderService(this);
 
             _hiddenItems = new Dictionary<VisualItemControl, double>();
 
@@ -221,25 +248,11 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
                     return;
                 }
 
-                CanScroll = false;
-
-                var count = Items.Count;
-
-                if (count > 0)
-                {
-                    _hiddenItems.Clear();
-
-                    foreach (var item in Items)
-                    {
-                        item.IsActive = false;
-                    }
-
-                    CalculateItemsYTranslate();
-                }
-
                 ((MainViewModel) BindingContext).IsBusy = true;
 
-                await Animate();
+                CanScroll = false;
+
+                await _renderService.RenderItems();
             }
             catch (Exception)
             {
@@ -254,23 +267,93 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
                     {
                         CanScroll = true;
                     }
+
+                    if (Items.Any())
+                    {
+                        Items.Last().IsEditable = true;
+                    }
                 }
             }
         }
 
-        private void ItemsOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private async void ItemsOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
                 {
-                    var view = e.NewItems[0];
+                    if (e.NewItems[0] is VisualItemControl view)
+                    {
+                        view.Remove += ViewOnRemove;
 
-                    PartRootStack.Children.Add((VisualItemControl) view);
+                        if (_renderMode == RenderMode.Move)
+                        {
+                            PartRootStack.Children.Insert(0, view);
+                        }
+                        else
+                        {
+                            PartRootStack.Children.Add(view);
+                        }
+                    }
+
                     break;
                 }
                 case NotifyCollectionChangedAction.Remove:
+                {
+                    if (e.OldItems[0] is VisualItemControl view)
+                    {
+                        view.Remove -= ViewOnRemove;
+
+                        PartRootStack.Children.Remove(view);
+
+                        if (_scrollMode)
+                        {
+                            return;
+                        }
+
+                        try
+                        {
+                            _scrollMode = true;
+
+                            _isLoaded = true;
+
+                            CanScroll = false;
+
+                            await TestRemove(view);
+                        }
+                        catch (Exception)
+                        {
+                        }
+                        finally
+                        {
+                         //   if (!_isLoaded)
+                         //   {
+                                if (_hiddenItems.Count > 1)
+                                {
+                                    CanScroll = true;
+                                }
+
+                                if (Items.Any())
+                                {
+                                    _hiddenItems.Keys.Last().IsActive = true;
+                                   // _hiddenItems.Keys.Last().IsEditable = true;
+                                    
+                                    // Items.Last().IsActive = true;
+                                    //
+                                     Items.Last().IsEditable = true;
+                                }
+                        //    }
+                            
+                            ((MainViewModel) BindingContext).IsBusy = false;
+                            
+                            _scrollMode = false;
+
+                           _isLoaded = false;
+                        }
+                    }
+
                     break;
+                }
                 case NotifyCollectionChangedAction.Reset:
                 {
                     if (PartRootStack.Children.Any())
@@ -291,6 +374,12 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             {
                 try
                 {
+                    _scrollMode = true;
+
+                    _isLoaded = true;
+
+                    _renderMode = RenderMode.Move;
+
                     CanScroll = false;
 
                     var item = Items.Last();
@@ -300,13 +389,30 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
                         await TestAnimate(item);
                     }
                 }
-                catch (Exception eq)
+                catch (Exception)
                 {
+                    // ignored
                 }
                 finally
                 {
+                    _scrollMode = false;
+
+                    _isLoaded = false;
+
+                    _renderMode = RenderMode.Normal;
+
                     CanScroll = true;
+
+                    Items.Last().IsEditable = true;
                 }
+            }
+        }
+
+        private void ViewOnRemove(object sender, EventArgs e)
+        {
+            if (sender is VisualItemControl visual)
+            {
+                RemoveItem?.Invoke(visual, new CustomEventArgs(visual.BindingContext));
             }
         }
 
@@ -314,29 +420,7 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
         #region Method
 
-        private Task Animate()
-        {
-            var data = _hiddenItems.OrderBy(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
-
-            var tasks = new List<Task>();
-
-            foreach (var item in data)
-            {
-                item.Key.TranslationY = 0;
-                item.Key.WidthRequest = _currentWidth;
-
-                // might use Child Animation
-                //var animation = new Animation(v => item.Key.TranslateTo(0, item.Value, 3000));
-
-                tasks.Add(item.Key.TranslateTo(0, item.Value, (uint) TimeSpan.FromSeconds(AnimationTime).TotalMilliseconds));
-            }
-
-            data.Keys.Last().IsActive = true;
-
-            return Task.WhenAll(tasks);
-        }
-
-        private void CalculateItemsYTranslate()
+        public void CalculateItemsYTranslate()
         {
             var currentParentHeight = PartRootGrid.Height;
             var currentLayoutHeight = PartRootStack.Height;
@@ -361,7 +445,7 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
             {
                 var pow = searchItems.IndexOf(item) + 1;
                 var powValue = Math.Pow(sourcePow, pow);
-                // item.WidthRequest = currentWidth;
+
                 _hiddenItems[item] = powValue;
             }
         }
@@ -375,28 +459,37 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
             var currentItem = Items.FirstOrDefault(i => i.BindingContext.Equals(SelectedItem));
 
-            var itemsToRender = Items.Where(i => Items.IndexOf(i) > Items.IndexOf(currentItem));
-
-            if (itemsToRender.Any())
+            if (currentItem != null)
             {
-                var queueToRender = new Stack<VisualItemControl>(itemsToRender);
+                var itemsToRender = Items.Where(i => Items.IndexOf(i) > Items.IndexOf(currentItem));
 
-                try
+                if (itemsToRender.Any())
                 {
-                    CanScroll = false;
+                    var queueToRender = new Stack<VisualItemControl>(itemsToRender);
 
-                    do
+                    try
                     {
-                        var itemToRender = queueToRender.Pop();
-                        await TestAnimate(itemToRender);
-                    } while (queueToRender.Count > 0);
-                }
-                catch (Exception e)
-                {
-                }
-                finally
-                {
-                    CanScroll = true;
+                        CanScroll = false;
+
+                        _scrollMode = true;
+
+                        do
+                        {
+                            var itemToRender = queueToRender.Pop();
+                            await TestAnimate(itemToRender);
+                        } while (queueToRender.Count > 0);
+
+                        currentItem.IsEditable = true;
+                    }
+                    catch (Exception e)
+                    {
+                    }
+                    finally
+                    {
+                        CanScroll = true;
+
+                        _scrollMode = false;
+                    }
                 }
             }
         }
@@ -409,14 +502,9 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
             tasks.Add(visualItemControl.TranslateTo(0, yEnd, (uint) TimeSpan.FromSeconds(AnimationTime).TotalMilliseconds));
 
-            var copyData = ((TestModel) visualItemControl.BindingContext).DeepCopy();
-
             var newItem = CreateVisualItem(visualItemControl.BindingContext);
+
             newItem.IsSelected = visualItemControl.IsSelected;
-
-            _isLoaded = true;
-
-            newItem.TranslationY = -newItem.Height;
 
             var yTranslateSource = _hiddenItems.OrderBy(x => x.Value).Select(x => x.Value);
 
@@ -424,23 +512,40 @@ namespace ExpPanelRenderer.CustomControl.VisualItemsPanel
 
             _hiddenItems = Items.Where(x => !x.Equals(visualItemControl)).Zip(yTranslateSource, (visual, yTranslate) => new {visual, yTranslate})
                                 .ToDictionary(x => x.visual, x => x.yTranslate);
-            Items.Clear();
 
             foreach (var visual in _hiddenItems.Keys)
             {
-                Items.Add(visual);
                 tasks.Add(visual.TranslateTo(0, _hiddenItems[visual], (uint) TimeSpan.FromSeconds(AnimationTime).TotalMilliseconds));
             }
 
             visualItemControl.IsActive = false;
-
-            Items.Add(visualItemControl);
+            visualItemControl.IsEditable = false;
 
             _hiddenItems.Keys.Last().IsActive = true;
 
             await Task.WhenAll(tasks);
 
             Items.Remove(visualItemControl);
+        }
+
+        private async Task TestRemove(VisualItemControl visualItemControl)
+        {
+            var tasks = new List<Task>();
+
+            _hiddenItems.Remove(visualItemControl);
+            
+            CalculateItemsYTranslate();
+
+            foreach (var visual in Items)
+            {
+                visual.WidthRequest = 332;
+                
+                tasks.Add(visual.TranslateTo(0, _hiddenItems[visual], (uint) TimeSpan.FromSeconds(AnimationTime).TotalMilliseconds));
+            }
+            
+            _hiddenItems.Keys.Last().IsActive = true;
+
+            await Task.WhenAll(tasks);
         }
 
         private VisualItemControl CreateVisualItem(object dataContext)

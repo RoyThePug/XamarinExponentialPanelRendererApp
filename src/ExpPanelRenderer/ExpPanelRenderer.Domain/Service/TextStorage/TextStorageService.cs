@@ -30,7 +30,7 @@ public class TextStorageService : ITextStorageService
 
             await Task.Run(() =>
             {
-                var searchData = _textData.Where(x => x.Contains(subString, StringComparison.OrdinalIgnoreCase)).ToList();
+                var searchData = _textData.Where(x => x != null && x.Contains(subString, StringComparison.OrdinalIgnoreCase)).ToList();
 
                 if (searchData.Count == 1)
                 {
@@ -74,6 +74,11 @@ public class TextStorageService : ITextStorageService
     public void AddText(string text)
     {
         _data.Add(text);
+    }
+
+    public void RemoveText(string text)
+    {
+        _data.Remove(text);
     }
 
     private IEnumerable<string> GetMockText()

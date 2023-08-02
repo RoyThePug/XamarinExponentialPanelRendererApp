@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -8,6 +9,11 @@ namespace ExpPanelRenderer
     {
         public App()
         {
+            // CultureInfo customCulture = (CultureInfo)System.Threading.Thread.CurrentThread.CurrentCulture.Clone();
+            // customCulture.NumberFormat.NumberDecimalSeparator = ".";
+            //
+            // System.Threading.Thread.CurrentThread.CurrentCulture = customCulture;
+            
             InitializeComponent();
 
             MainPage = new AppShell();

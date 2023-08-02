@@ -5,6 +5,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/CustomControl/RemoveItem/RemoveVisualControlTheme.xaml" />
                 <ResourceDictionary Source="/CustomControl/VisualItem/VisualItemControlTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

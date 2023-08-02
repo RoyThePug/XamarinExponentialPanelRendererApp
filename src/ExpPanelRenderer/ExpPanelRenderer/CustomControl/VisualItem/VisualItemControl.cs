@@ -1,14 +1,42 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Windows.Input;
+using ExpPanelRenderer.CustomControl.RemoveItem;
 using Xamarin.Forms;
 
 namespace ExpPanelRenderer.CustomControl.VisualItem
 {
     public class VisualItemControl : ContentView
     {
+        #region Field
+
+        private RemoveVisualControl? _removeVisual;
+
+        #endregion
+
+        #region Readonly Bindable Property
+
+        public static readonly BindablePropertyKey IsProxyKey = BindableProperty.CreateReadOnly(
+            nameof(IsProxy),
+            typeof(bool),
+            typeof(VisualItemControl), false);
+
+        public static readonly BindableProperty IsProxyProperty = IsProxyKey.BindableProperty;
+
+        public bool IsProxy
+        {
+            get => (bool) GetValue(IsProxyProperty);
+            private set => SetValue(IsProxyKey, value);
+        }
+
+        #endregion
+
         #region Bindable Property
+
+        public static readonly BindableProperty IsEditableProperty = BindableProperty.Create(
+            propertyName: nameof(IsEditable),
+            returnType: typeof(bool),
+            declaringType: typeof(VisualItemControl),
+            defaultValue: false);
 
         public static readonly BindableProperty TextProperty = BindableProperty.Create(
             propertyName: nameof(Text),
@@ -16,6 +44,50 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
             declaringType: typeof(VisualItemControl),
             defaultValue: string.Empty,
             defaultBindingMode: BindingMode.OneWay);
+
+        public static readonly BindableProperty TextColorProperty = BindableProperty.Create(
+            propertyName: nameof(TextColor),
+            returnType: typeof(Color),
+            declaringType: typeof(VisualItemControl),
+            defaultValue: Color.Blue,
+            defaultBindingMode: BindingMode.OneWay);
+
+        public static readonly BindableProperty AnimationTimeProperty = BindableProperty.Create(
+            propertyName: nameof(Animation),
+            returnType: typeof(double),
+            declaringType: typeof(VisualItemControl),
+            defaultValue: 1.0);
+
+        public static readonly BindableProperty IsSelectedProperty = BindableProperty.Create(
+            propertyName: nameof(IsSelected),
+            returnType: typeof(bool),
+            declaringType: typeof(VisualItemControl),
+            defaultValue: false,
+            propertyChanged: IsSelectedChanged);
+
+        public static readonly BindableProperty IsActiveProperty = BindableProperty.Create(
+            propertyName: nameof(IsActive),
+            returnType: typeof(bool),
+            declaringType: typeof(VisualItemControl),
+            defaultValue: false,
+            defaultBindingMode: BindingMode.OneWay);
+
+        public static readonly BindableProperty RemoveCommandProperty = BindableProperty.Create(
+            propertyName: nameof(RemoveCommand),
+            returnType: typeof(ICommand),
+            declaringType: typeof(VisualItemControl));
+
+        public bool IsEditable
+        {
+            get => (bool) GetValue(IsEditableProperty);
+            set
+            {
+                if (IsEditable != value)
+                {
+                    SetValue(IsEditableProperty, value);
+                }
+            }
+        }
 
         public string Text
         {
@@ -29,13 +101,6 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
             }
         }
 
-        public static readonly BindableProperty TextColorProperty = BindableProperty.Create(
-            propertyName: nameof(TextColor),
-            returnType: typeof(Color),
-            declaringType: typeof(VisualItemControl),
-            defaultValue: Color.Blue,
-            defaultBindingMode: BindingMode.OneWay);
-
         public Color TextColor
         {
             get => (Color) GetValue(TextColorProperty);
@@ -46,18 +111,6 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
                     SetValue(TextColorProperty, value);
                 }
             }
-        }
-
-
-        public static readonly BindableProperty AnimationTimeProperty = BindableProperty.Create(
-            propertyName: nameof(Animation),
-            returnType: typeof(double),
-            declaringType: typeof(VisualItemControl),
-            defaultValue: 1.0,
-            propertyChanged: PropertyChanged);
-
-        private static void PropertyChanged(BindableObject bindable, object oldvalue, object newvalue)
-        {
         }
 
         public double AnimationTime
@@ -72,13 +125,6 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
             }
         }
 
-        public static readonly BindableProperty IsSelectedProperty = BindableProperty.Create(
-            propertyName: nameof(IsSelected),
-            returnType: typeof(bool),
-            declaringType: typeof(VisualItemControl),
-            defaultValue: false,
-            propertyChanged: IsSelectedChanged);
-
         public bool IsSelected
         {
             get => (bool) GetValue(IsSelectedProperty);
@@ -90,6 +136,48 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
                 }
             }
         }
+
+        public bool IsActive
+        {
+            get => (bool) base.GetValue(IsActiveProperty);
+            set
+            {
+                if (IsActive != value)
+                {
+                    SetValue(IsActiveProperty, value);
+                }
+            }
+        }
+
+        public ICommand RemoveCommand
+        {
+            get => (ICommand) GetValue(RemoveCommandProperty);
+            set => SetValue(RemoveCommandProperty, value);
+        }
+
+        #endregion
+
+        #region Event
+
+        public event EventHandler Remove;
+
+        #endregion
+
+        public VisualItemControl()
+        {
+        }
+
+        protected override void OnApplyTemplate()
+        {
+            _removeVisual = GetTemplateChild("PartRemove") as RemoveVisualControl;
+
+            if (_removeVisual != null)
+            {
+                _removeVisual.Clicked += RemoveVisualOnClicked;
+            }
+        }
+
+        #region Event Handler
 
         private static void IsSelectedChanged(BindableObject bindable, object oldvalue, object newvalue)
         {
@@ -106,46 +194,11 @@ namespace ExpPanelRenderer.CustomControl.VisualItem
             }
         }
 
-        public static readonly BindableProperty IsActiveProperty = BindableProperty.Create(
-            propertyName: nameof(IsActive),
-            returnType: typeof(bool),
-            declaringType: typeof(VisualItemControl),
-            defaultValue: false,
-            defaultBindingMode: BindingMode.OneWay,
-            propertyChanged: IsActivePropertyChanged);
-
-        private static void IsActivePropertyChanged(BindableObject bindable, object oldvalue, object newvalue)
+        private void RemoveVisualOnClicked(object sender, EventArgs e)
         {
-            // if (!(bool) newvalue)
-            // {
-            //      VisualStateManager.GoToState((VisualElement)bindable, "Normal");
-            // }
-            // else
-            // {
-            //     VisualStateManager.GoToState((VisualElement)bindable, "Test");
-            // }
-        }
-
-        public bool IsActive
-        {
-            get => (bool) base.GetValue(IsActiveProperty);
-            set
-            {
-                if (this.IsActive != value)
-                {
-                    base.SetValue(IsActiveProperty, value);
-                }
-            }
+            Remove?.Invoke(this, EventArgs.Empty);
         }
 
         #endregion
-
-        public VisualItemControl()
-        {
-        }
-
-        protected override void OnApplyTemplate()
-        {
-        }
     }
 }

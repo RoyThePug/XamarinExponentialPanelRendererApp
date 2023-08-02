@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -52,6 +54,7 @@ public partial class MainViewModel : ObservableObject
 
         items = new ObservableCollection<TestModel>();
 
+        // System.Threading.Thread.CurrentThread.CurrentCulture = customCulture;
         AnimationTime = 0.5;
 
         _colors = new Dictionary<int, string>
@@ -115,10 +118,10 @@ public partial class MainViewModel : ObservableObject
             // }
 
             var res = CurrentResultText;
-            
+
             CurrentResultText = await _textStorage.SearchText(substring, res);
 
-            var equalItem = Items.FirstOrDefault(i => i.Text.Equals(CurrentResultText));
+            var equalItem = Items.FirstOrDefault(i => !string.IsNullOrEmpty(i.Text) && i.Text.Equals(CurrentResultText));
 
             if (equalItem != null)
             {
@@ -143,7 +146,7 @@ public partial class MainViewModel : ObservableObject
             IsBusy = false;
         }
     }
-    
+
     [RelayCommand(CanExecute = nameof(CanAddVisualItem))]
     async Task AddVisualItemAsync()
     {
@@ -190,6 +193,39 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     Task DownAsync()
     {
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    Task RemoveAsync(object parameter)
+    {
+        // Debug.WriteLine("RemoveAsync");
+        try
+        {
+            IsBusy = true;
+
+            var currentItem = Items.FirstOrDefault(x => x.Equals(parameter));
+
+            if (currentItem != null)
+            {
+                if (SelectedItem != null && SelectedItem.Equals(currentItem))
+                {
+                    SelectedItem = null;
+                }
+
+                _textStorage.RemoveText(currentItem.Text);
+
+                Items.Remove(currentItem);
+            }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+        finally
+        {
+        }
+
         return Task.CompletedTask;
     }
 
